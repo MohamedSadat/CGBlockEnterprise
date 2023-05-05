@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CGBlockInfra.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
@@ -37,6 +38,23 @@ namespace CGBlockBussines
 
                 return sb.ToString();
             }
+        }
+        public static string HashTransaction(LedgerTransModel trans)
+        {
+            var hash = HashAlgoStd($"{trans.TransId}{trans.Sender}{trans.Reciver}{trans.Amount}{trans.TransDate}{trans.BlockHash}");
+            return hash;
+        }
+       public static string GeneratePRivateKey()
+        {
+            // Generate a new private key
+            byte[] privateKeyBytes = new byte[32];
+            using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(privateKeyBytes);
+            }
+            string privateKeyHex = BitConverter.ToString(privateKeyBytes).Replace("-", "");
+            return privateKeyHex;
+
         }
     }
 }
