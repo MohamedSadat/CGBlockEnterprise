@@ -6,19 +6,16 @@ using System.Threading.Tasks;
 
 namespace CGBlockInfra.Models
 {
-    public class UTXOModel
+    public class WalletModel
     {
-        public UTXOModel()
+        public WalletModel()
         {
             
         }
-        public int Id { get; set; }
-        public string TransId { get; set; }
-        public int OutputIndex { get; set; } = 0;
         public string Address { get; set; }
         public string PublicKey { get; set; }
-        public int Spent { get; set; } = 0;
-        public double Amount { get; set; } = 0;
+        public string PrivateKey { get; set; }
+        public List<NodeModel> Peers { get; set; } = new List<NodeModel>();
 
     }
 }

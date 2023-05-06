@@ -13,7 +13,7 @@ namespace CGBlockBussines
         public BlockModel Block { get; set; }
         public BLBlock(IApp app)
         {
-            Block = app.CurrentBlock;
+         
         }
         public bool Validate(BlockModel block)
         {

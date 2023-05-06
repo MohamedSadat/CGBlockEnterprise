@@ -1,4 +1,5 @@
-﻿using CGBlockInfra.CGInterface;
+﻿using CGBlockDA;
+using CGBlockInfra.CGInterface;
 using CGBlockInfra.Models;
 using System;
 using System.Collections.Generic;
@@ -11,12 +12,27 @@ namespace CGBlockBussines
     public class BLUTXO
     {
         private readonly IApp app;
-
+        CUTXOExplorer xutxo = new CUTXOExplorer();
         public BLUTXO(IApp app)
         {
             this.app = app;
         }
 
+      public void GenerateInputs(LedgerTransModel trans)
+        {
+            var address = BLCrytography.HashAlgoStd(trans.PublicKey);
+            var allinputs = xutxo.GetUnpent(address);
+            double validatedbal = 0;
+            foreach(var input in allinputs)
+            {
+                validatedbal += input.Amount;
+                if (validatedbal >= trans.Amount)
+                {
+                    trans.Inputs.Add(input);
+                    return;
+                }
+            }
+        }
         public void GenerateOutput(LedgerTransModel trans)
         {
             foreach (var vin in trans.Inputs)
@@ -30,7 +46,8 @@ namespace CGBlockBussines
                         Amount = output,
                         TransId = trans.TransId,
                         Address = trans.Sender,
-                        OutputIndex = vin.Id
+                        OutputIndex = vin.Id,
+                        PublicKey=trans.PublicKey
                     };
                     trans.Outputs.Add(vout);
                 }
@@ -51,8 +68,9 @@ namespace CGBlockBussines
             {
                 Amount = trans.Amount-trans.Fee,
                 TransId = trans.TransId,
-                Address = trans.Reciver,
-                OutputIndex = 0
+                Address = trans.Receiver,
+                OutputIndex = 0,
+                PublicKey=""
             };
             trans.Outputs.Add(vout);
         }
@@ -63,7 +81,8 @@ namespace CGBlockBussines
                 Amount =  trans.Fee,
                 TransId = trans.TransId,
                 Address = app.Node.Address,
-                OutputIndex = 0
+                OutputIndex = 0,
+                PublicKey = app.Node.PublicKey,
             };
             trans.Outputs.Add(vout);
         }

@@ -7,27 +7,45 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Dapper;
+using System.Security.Cryptography.X509Certificates;
 
 namespace CGBlockDA
 {
     public class CUTXOExplorer
     {
-        public List<UTXOModel> GetUnpent(string publickey)
+        public List<UTXOModel> GetUnpent(string Address)
         {
             using (IDbConnection connection = new SqlConnection(GlobalConfig.cn))
             {
                 StringBuilder sql = new StringBuilder();
-                sql.Append("select UTXO.*    ");
+                sql.Append("select o.*    ");
                 sql.Append("from UTXO o ");
-                sql.Append(" where o.publickey=@publickey ");
+                sql.Append(" where o.Address=@Address ");
                 sql.Append(" and o.Spent=@Spent ");
 
-                var p = new { publickey = publickey, Spent=0 };
+                var p = new { Address = Address, Spent=0 };
 
                 var r = connection.Query<UTXOModel>(sql.ToString(), p).ToList();
                 return r;
             }
         }
-  
+
+        public static double GetBalance(string Address)
+        {
+            using (IDbConnection connection = new SqlConnection(GlobalConfig.cn))
+            {
+                StringBuilder sql = new StringBuilder();
+                sql.Append(@"select sum(Amount)  ");
+                sql.Append("from UTXO o ");
+                sql.Append(" where o.Address=@Address ");
+                sql.Append(" and o.Spent=@Spent ");
+                var p = new { Address = Address, Spent = 0 };
+
+                var r = connection.ExecuteScalar<double>(sql.ToString(),p);
+                return r;
+            }
+
+        }
+
     }
 }

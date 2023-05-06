@@ -20,33 +20,42 @@ namespace CGBlockDA
             using (IDbConnection connection = new SqlConnection(GlobalConfig.cn))
             {
                 var p = new DynamicParameters();
-                StringBuilder sql = new StringBuilder();
-                sql.Append("insert into Blocks ");
-                sql.Append("(PrevBlockHash,TimeStamp,BlockHeight,BlockHash ,NodeAddress)");
-                sql.Append("values");
-                sql.Append("(@PrevBlockHash,@TimeStamp,@BlockHeight,@BlockHash ,@NodeAddress)");
-                sql.Append("");
-                sql.Append("");
-                var sqlLedgerupdate = "Update LedgerTrans set TransHash=@TransHash where RecId=@RecId and Company=@Company";
+                StringBuilder sqlblock = new StringBuilder();
+                sqlblock.Append("insert into Blocks ");
+                sqlblock.Append("(PrevBlockHash,TimeStamp,BlockHeight,BlockHash ,NodeAddress,Reward,BlockDate)");
+                sqlblock.Append("values");
+                sqlblock.Append("(@PrevBlockHash,@TimeStamp,@BlockHeight,@BlockHash ,@NodeAddress,@Reward,@BlockDate)");
+                sqlblock.Append("");
+                sqlblock.Append("");
+                StringBuilder sqltrans = new StringBuilder();
+                sqltrans.Append("insert into LedgerTrans ");
+                sqltrans.Append("(TransId,Sender,Receiver,Amount ,Fee,Reward  ,BlockHash ,TransDate ,Note,TransHash,BlockHeight,PublicKey)");
+                sqltrans.Append("values");
+                sqltrans.Append("(@TransId,@Sender,@Receiver,@Amount ,@Fee,@Reward  ,@BlockHash ,@TransDate ,@Note,@TransHash,@BlockHeight,@PublicKey)");
+
+                var sqloutputs = "insert into UTXO(Id,TransId,OutputIndex,Amount,Address,PublicKey,Spent) values(@Id,@TransId,@OutputIndex,@Amount,@Address,@PublicKey,@Spent)";
 
 
+                var sqlblockchain = "insert into BlockChain(BlockHash,PrevBlockHash,BlockHeight)values(@BlockHash,@PrevBlockHash,@BlockHeight)";
 
+                connection.Open();
                 using (var trans = connection.BeginTransaction())
                 {
                     try
                     {
 
-
-                        var r = connection.Execute(sql.ToString(), block, trans);
-                        connection.Execute(sqlLedgerupdate, block, trans);
+                        var pchain =new { BlockHash=block.BlockHash, PrevBlockHash =block.PrevBlockHash, BlockHeight =block.BlockHeight};
+                        var r = connection.Execute(sqlblock.ToString(), block, trans);
+                        block.BlockState = CGBlockInfra.CGTypes.TBlockState.Saved;
+                        connection.Execute(sqlblockchain, pchain, trans);
                         foreach(var ledgertrans in block.Transactions)
                         {
-                            foreach(var vin in ledgertrans.Inputs)
-                            {
+                                connection.Execute(sqltrans.ToString(), ledgertrans, trans);
+                            ledgertrans.TransStatus = CGBlockInfra.CGTypes.TTransState.Completed;
 
-                            }
                             foreach (var vout in ledgertrans.Outputs)
                             {
+                                connection.Execute(sqloutputs, vout, trans);
 
                             }
 
@@ -75,22 +84,24 @@ namespace CGBlockDA
                 var p = new DynamicParameters();
                 StringBuilder sqlblock = new StringBuilder();
                 sqlblock.Append("insert into Blocks ");
-                sqlblock.Append("(PrevBlockHash,TimeStamp,BlockHeight,BlockHash ,NodeAddress)");
+                sqlblock.Append("(PrevBlockHash,TimeStamp,BlockHeight,BlockHash ,NodeAddress,Reward,BlockDate)");
                 sqlblock.Append("values");
-                sqlblock.Append("(@PrevBlockHash,@TimeStamp,@BlockHeight,@BlockHash ,@NodeAddress)");
+                sqlblock.Append("(@PrevBlockHash,@TimeStamp,@BlockHeight,@BlockHash ,@NodeAddress,@Reward,@BlockDate)");
                 sqlblock.Append("");
                 sqlblock.Append("");
                 StringBuilder sqltrans = new StringBuilder();
                 sqltrans.Append("insert into LedgerTrans ");
-                sqltrans.Append("(TransId,Sender,Receiver,Amount ,Fee,Reward  ,BlockHash ,TransDate ,Note,TransHash)");
+                sqltrans.Append("(TransId,Sender,Receiver,Amount ,Fee,Reward  ,BlockHash ,TransDate ,Note,TransHash,BlockHeight,PublicKey)");
                 sqltrans.Append("values");
-                sqltrans.Append("(@TransId,@Sender,@Receiver,@Amount ,@Fee,@Reward  ,@BlockHash ,@TransDate ,@Note,@TransHash)");
+                sqltrans.Append("(@TransId,@Sender,@Receiver,@Amount ,@Fee,@Reward  ,@BlockHash ,@TransDate ,@Note,@TransHash,@BlockHeight,@PublicKey)");
                 sqltrans.Append("");
                 sqltrans.Append("");
                 var sqlinput = "Update UTXO set Spent=@Spent where publickey=@publickey ";
-                var sqloutputs = "insert into UTXO() values()";
+                var sqloutputs = "insert into UTXO(Id,TransId,OutputIndex,Amount,Address,PublicKey,Spent) values(@Id,@TransId,@OutputIndex,@Amount,@Address,@PublicKey,@Spent)";
 
+                var sqlblockchain = "insert into BlockChain(BlockHash,PrevBlockHash,BlockHeight)values(@BlockHash,@PrevBlockHash,@BlockHeight)";
 
+                connection.Open();  
                 using (var trans = connection.BeginTransaction())
                 {
                     try
@@ -98,15 +109,24 @@ namespace CGBlockDA
 
 
                         var r = connection.Execute(sqlblock.ToString(), block, trans);
+                        block.BlockState = CGBlockInfra.CGTypes.TBlockState.Saved;
+
+                        var pchain = new { BlockHash = block.BlockHash, PrevBlockHash = block.PrevBlockHash, BlockHeight = block.BlockHeight };
+                      connection.Execute(sqlblockchain, pchain, trans);
+
                         foreach (var ledgertrans in block.Transactions)
                         {
                             connection.Execute(sqltrans.ToString(), ledgertrans,trans);
+                            ledgertrans.TransStatus = CGBlockInfra.CGTypes.TTransState.Completed;
                             foreach (var vin in ledgertrans.Inputs)
                             {
+                                vin.Id = GetUTXOId();
+                                connection.Execute(sqloutputs.ToString(), vin, trans);
 
                             }
                             foreach (var vout in ledgertrans.Outputs)
                             {
+                                vout.Id = GetUTXOId();
                                 connection.Execute(sqloutputs.ToString(), vout, trans);
                             }
 
@@ -136,6 +156,73 @@ namespace CGBlockDA
 
                 var r = connection.ExecuteScalar<int>(sql.ToString());
                 return r;
+            }
+
+        }
+        public List<NodeModel> GetPeers()
+        {
+            using (IDbConnection connection = new SqlConnection(GlobalConfig.cn))
+            {
+                StringBuilder sql = new StringBuilder();
+                sql.Append("select o.*    ");
+                sql.Append("from Peers o ");
+            
+                var r = connection.Query<NodeModel>(sql.ToString()).ToList();
+                return r;
+            }
+        }
+        public NodeModel GetNode()
+        {
+            using (IDbConnection connection = new SqlConnection(GlobalConfig.cn))
+            {
+                StringBuilder sql = new StringBuilder();
+                sql.Append("select o.*    ");
+                sql.Append("from Node o ");
+
+                var r = connection.Query<NodeModel>(sql.ToString()).FirstOrDefault();
+                return r;
+            }
+        }
+
+        public List<BlockChainModel> GetBlockChain()
+        {
+            using (IDbConnection connection = new SqlConnection(GlobalConfig.cn))
+            {
+                StringBuilder sql = new StringBuilder();
+                sql.Append("select o.*    ");
+                sql.Append("from BlockChain o ");
+
+                var r = connection.Query<BlockChainModel>(sql.ToString()).ToList();
+                return r;
+            }
+        }
+        public BlockModel GetBlock(int blockheight)
+        {
+            using (IDbConnection connection = new SqlConnection(GlobalConfig.cn))
+            {
+                StringBuilder sql = new StringBuilder();
+                sql.Append("select o.*    ");
+                sql.Append("from Blocks o ");
+                sql.Append("where blockheight=@blockheight");
+                var sqltrans = "select t.* from LedgerTrans t where blockheight=@blockheight ";
+                var p = new { blockheight= blockheight };
+                var r = connection.Query<BlockModel>(sql.ToString(),p).FirstOrDefault();
+                r.BlockState = CGBlockInfra.CGTypes.TBlockState.Saved;
+               r.Transactions = connection.Query<LedgerTransModel>(sqltrans, p).ToList();
+
+                return r;
+            }
+        }
+        public static int GetUTXOId()
+        {
+            using (IDbConnection connection = new SqlConnection(GlobalConfig.cn))
+            {
+                StringBuilder sql = new StringBuilder();
+                sql.Append(@"select Max(Id) from ");
+                sql.Append("UTXO  ");
+
+                var r = connection.ExecuteScalar<int>(sql.ToString());
+                return r+1;
             }
 
         }

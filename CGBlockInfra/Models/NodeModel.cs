@@ -12,11 +12,17 @@ namespace CGBlockInfra.Models
         {
             
         }
-        public string Name { get; set; }    
+        public string NodeName { get; set; }    
         public string Address { get; set; } = "";
         public string PublicKey { get; set; } = "";
         public DateTime CreatedDate { get; set; }
         public List<BlockChainModel> BlockChain { get; set; }=new List<BlockChainModel>();
         public List<NodeModel> Peers { get; set; } = new List<NodeModel>();
+
+        public BlockModel CurrentBlock { get; set; } = new BlockModel();
+       public BlockModel LastBlock { get; set; } = new BlockModel();
+
+        public List<LedgerTransModel> MemPool { get; set; }=new List<LedgerTransModel>();
+
     }
 }

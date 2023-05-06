@@ -21,31 +21,40 @@ namespace CGBlockDA
                 var p = new DynamicParameters();
                 StringBuilder sqltrans = new StringBuilder();
                 sqltrans.Append("insert into LedgerTrans ");
-                sqltrans.Append("(TransId,Sender,Receiver,Amount ,Fee,Reward  ,BlockHash ,TransDate ,Note,TransHash)");
+                sqltrans.Append("(TransId,Sender,Receiver,Amount ,Fee,Reward  ,BlockHash ,TransDate ,Note,TransHash,BlockHeight,PublicKey)");
                 sqltrans.Append("values");
-                sqltrans.Append("(@TransId,@Sender,@Receiver,@Amount ,@Fee,@Reward  ,@BlockHash ,@TransDate ,@Note,@TransHash)");
+                sqltrans.Append("(@TransId,@Sender,@Receiver,@Amount ,@Fee,@Reward  ,@BlockHash ,@TransDate ,@Note,@TransHash,@BlockHeight,@PublicKey)");
                 sqltrans.Append("");
                 sqltrans.Append("");
-                var sqlinput = "Update UTXO set Spent=@Spent where publickey=@publickey ";
-                var sqloutputs = "insert into UTXO() values()";
-
-
+                var sqlinput = "Update UTXO set Spent=@Spent where  Id=@Id ";
+                var sqloutputs = "insert into UTXO(Id,TransId,OutputIndex,Amount,Address,PublicKey,Spent) values(@Id,@TransId,@OutputIndex,@Amount,@Address,@PublicKey,@Spent)";
+                connection.Open();
+                int id = GetUTXOId();
                 using (var trans = connection.BeginTransaction())
                 {
                     try
                     {
 
+                    
 
                         var r = connection.Execute(sqltrans.ToString(), transtable, trans);
+                        transtable.TransStatus = CGBlockInfra.CGTypes.TTransState.Created;
                         // connection.Execute(sqlLedgerupdate, transtable, trans);
-                        var pinput = new { Spent = 1, publickey = "" };
+                        
                         foreach (var vin in transtable.Inputs)
                         {
+                        var pinput = new { Spent = 1, publickey =transtable.PublicKey,Id=vin.Id };
+
+                            // vin.Id = id;
+                            //  id++;
                             connection.Execute(sqlinput, pinput, trans);
                         }
+
                         foreach (var vout in transtable.Outputs)
                         {
-                            connection.Execute(sqlinput, vout, trans);
+                            vout.Id = id;
+                            id++;
+                            connection.Execute(sqloutputs, vout, trans);
                         }
 
                         
@@ -56,7 +65,7 @@ namespace CGBlockDA
                     }
                     catch (Exception ex)
                     {
-                   
+                        transtable.ErrorMSG = ex.Message;
                         return false;
                     }
 
@@ -65,18 +74,20 @@ namespace CGBlockDA
 
 
         }
-        public static int GetTransId()
+        public static int GetUTXOId()
         {
             using (IDbConnection connection = new SqlConnection(GlobalConfig.cn))
             {
                 StringBuilder sql = new StringBuilder();
-                sql.Append(@"select Max(TransId) from ");
-                sql.Append("LedgerTrans  ");
-             
+                sql.Append(@"select Max(Id) from ");
+                sql.Append("UTXO  ");
+
                 var r = connection.ExecuteScalar<int>(sql.ToString());
-                return r;
+                return r + 1;
             }
 
         }
+
+ 
     }
 }

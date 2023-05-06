@@ -20,14 +20,7 @@ namespace CGBlockBussines
         }
         public bool ValidateNode(NodeModel node)
         {
-            foreach(var block in node.Blocks)
-            {
-
-                foreach (var tx in block.Transactions)
-                {
-
-                }
-            }
+           
             return true;
         }
 
