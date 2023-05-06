@@ -66,6 +66,66 @@ namespace CGBlockDA
 
 
         }
+        public bool SaveBlock(BlockModel block)
+        {
+
+
+            using (IDbConnection connection = new SqlConnection(GlobalConfig.cn))
+            {
+                var p = new DynamicParameters();
+                StringBuilder sqlblock = new StringBuilder();
+                sqlblock.Append("insert into Blocks ");
+                sqlblock.Append("(PrevBlockHash,TimeStamp,BlockHeight,BlockHash ,NodeAddress)");
+                sqlblock.Append("values");
+                sqlblock.Append("(@PrevBlockHash,@TimeStamp,@BlockHeight,@BlockHash ,@NodeAddress)");
+                sqlblock.Append("");
+                sqlblock.Append("");
+                StringBuilder sqltrans = new StringBuilder();
+                sqltrans.Append("insert into LedgerTrans ");
+                sqltrans.Append("(TransId,Sender,Receiver,Amount ,Fee,Reward  ,BlockHash ,TransDate ,Note,TransHash)");
+                sqltrans.Append("values");
+                sqltrans.Append("(@TransId,@Sender,@Receiver,@Amount ,@Fee,@Reward  ,@BlockHash ,@TransDate ,@Note,@TransHash)");
+                sqltrans.Append("");
+                sqltrans.Append("");
+                var sqlinput = "Update UTXO set Spent=@Spent where publickey=@publickey ";
+                var sqloutputs = "insert into UTXO() values()";
+
+
+                using (var trans = connection.BeginTransaction())
+                {
+                    try
+                    {
+
+
+                        var r = connection.Execute(sqlblock.ToString(), block, trans);
+                        foreach (var ledgertrans in block.Transactions)
+                        {
+                            connection.Execute(sqltrans.ToString(), ledgertrans,trans);
+                            foreach (var vin in ledgertrans.Inputs)
+                            {
+
+                            }
+                            foreach (var vout in ledgertrans.Outputs)
+                            {
+                                connection.Execute(sqloutputs.ToString(), vout, trans);
+                            }
+
+                        }
+                        trans.Commit();
+                        return true;
+
+                    }
+                    catch (Exception ex)
+                    {
+
+                        return false;
+                    }
+
+                }
+            }
+
+
+        }
         public static int GetBlockHeight()
         {
             using (IDbConnection connection = new SqlConnection(GlobalConfig.cn))

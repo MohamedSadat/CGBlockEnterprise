@@ -41,6 +41,7 @@ namespace CGBlockBussines
         }
         public static string HashTransaction(LedgerTransModel trans)
         {
+            trans.TransId = GeneratePRivateKey();
             var hash = HashAlgoStd($"{trans.TransId}{trans.Sender}{trans.Reciver}{trans.Amount}{trans.TransDate}{trans.BlockHash}");
             return hash;
         }

@@ -16,10 +16,12 @@ namespace CGBlockBussines
         BLBlock xblock;
         public NodeModel Node { get; set; } = new NodeModel();
         CLedgerTransCMD xledger = new CLedgerTransCMD();
+        BLUTXO xutxo;
         public BLNode(IApp app)
         {
             this.app = app;
             xblock=new BLBlock(app);
+            xutxo=new BLUTXO(app);
         }
 
         public bool Confirm(BlockModel block)
@@ -28,15 +30,7 @@ namespace CGBlockBussines
             block.BlockHash = BLCrytography.HashAlgoStd($"{app.CurrentBlock.BlockHash}{app.Node.Name}{block.Volume}{block.BlockSize}{block.Blockid}{block.TimeStamp}{block.Fee}");
             return false;
         }
-        public bool Post(LedgerTransModel ledgerTrans, string privatekey)
-        {
-            ledgerTrans.TransDate = DateTime.Now;
-            ledgerTrans.TimeStamp = DateTime.Now.Ticks;
-            ledgerTrans.TransHash = BLCrytography.HashAlgoStd($"{privatekey}{xblock.GetLastRTrans().TransHash}{ledgerTrans.TimeStamp}{ledgerTrans.Amount}{ledgerTrans.Sender}{ledgerTrans.Reciver}");
-            app.CurrentBlock.Transactions.Add(ledgerTrans);
-            return true;
-        }
-  
+   
         public void AddNode(NodeModel node)
         {
             Node.Peers.Add(node);
@@ -52,13 +46,7 @@ namespace CGBlockBussines
         {
             return new BlockModel();
         }
-        public bool ValidateTransaction(LedgerTransModel ledgerTrans, string privatekey)
-        {
-            var publickey = BLCrytography.HashAlgoStd(privatekey);
-            //Search UTXO to validate balance
-
-            return true;
-        }
+   
         public void GenerateGenisusBlock()
         {
             var block = new BlockModel
@@ -109,6 +97,9 @@ namespace CGBlockBussines
             };
             block.BlockHash = BLCrytography.HashAlgoStd($"{block.PrevHash}{block.TimeStamp}{block.BlockHeight}");
 
+            //Generate Reward transaction
+          block.Transactions.Add(  GenerateRewardTransaction(block)); 
+           
             Node.BlockChain.Add(new BlockChainModel
             {
                 BlockHash = block.BlockHash,
@@ -118,51 +109,105 @@ namespace CGBlockBussines
             });
 
         }
+        public LedgerTransModel GenerateRewardTransaction(BlockModel block)
+        {
+            var trans = new LedgerTransModel
+            {
+                Amount = 50,
+                BlockHash = block.BlockHash,
+                Fee = 0,
+                Note = "Reward",
+                Reciver = block.Node,
+                TransDate = DateTime.Now,
+                TimeStamp = DateTime.Now.Ticks,
+            };
+            BLCrytography.HashTransaction(trans);
+            var output = new UTXOModel
+            {
+                Address = block.Node,
+                Amount = trans.Amount,
+                OutputIndex = 0,
+                PublikKey = "",
+                Spent = 0,
+                TransId = trans.TransId
+            };
+            trans.Outputs.Add(output);
+            return trans;
+
+        }
         public void ReceiveTransaction(LedgerTransModel trans,string publickey)
         {
-
+            
             var address = BLCrytography.HashAlgoStd(publickey);
             trans.Sender = address;
             trans.TransHash = BLCrytography.HashTransaction(trans);
-            trans.Inputs = xexplorer.GetInputs(publickey);
-            if(trans.Inputs.Sum(x => x.Amount) < trans.Amount)
+         
+         
+
+          if(ValidateTrans(trans, publickey)==true)
+            {
+                //add it to pool after validation
+                app.MemPool.Add(trans);
+                BroadCastTrans(trans);
+
+                //You should pickit first from the queue
+                ConfirmTrans(trans, publickey);
+            }
+
+        }
+        public bool ValidateTrans(LedgerTransModel trans, string publickey)
+        {
+            trans.Fee = 1;
+            double output = 0;
+            
+            var allinputs = xexplorer.GetUnpent(publickey);
+            foreach (var vin in allinputs)
+            {
+                vin.Spent = 1;
+
+                trans.Inputs.Add(vin);
+
+                output += vin.Amount;
+
+                if (output >= trans.Amount)
+                {
+                    break;
+                }
+                
+            }
+
+
+
+            if (trans.Inputs.Sum(x => x.Amount) < trans.Amount)
             {
                 //not enough balance
+                return false;
             }
 
             //Validate Key
             //Retrieve un spent UTXO
             //Generate new utxo
-            var lastblock = GetLastBlock();
-                lastblock.Transactions.Add(trans);
-
+            //Calc fee
+          
+            return true;
         }
-        public void GenerateOutput(LedgerTransModel trans)
+        public void ConfirmTrans(LedgerTransModel trans, string publickey)
         {
-            foreach(var vin in trans.Inputs)
-            {
-                var output = vin.Amount- trans.Amount ;
-                if (output > 0)
-                {
-                    vin.Spent = 1;
-                    var vout = new UTXOModel
-                    {
-                        Amount = output,
-                        TransId = trans.TransId,
-                        Address = trans.Sender,
-                        OutputIndex = 0
-                    };
-                    trans.Outputs.Add(vout);
-                }
-                if(output==0)
-                {
-                    vin.Spent = 1;
-                }
-                else if(output<0)
-                {
+          xutxo.  GenerateOutput(trans);
+            xutxo.GenerateReceiverOutput(trans);
+            xutxo.GenerateFeeOutput(trans);
 
-                }
-            }
+            xledger.SaveLedgerTrans(trans);
+            var lastblock = GetLastBlock();
+            lastblock.Transactions.Add(trans);
+
+            app.MemPool.Remove(trans);
+        }
+
+   
+        public void BroadCastTrans(LedgerTransModel trans)
+        {
+
         }
     }
 }

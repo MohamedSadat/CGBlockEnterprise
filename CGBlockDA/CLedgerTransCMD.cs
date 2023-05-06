@@ -15,19 +15,19 @@ namespace CGBlockDA
         public bool SaveLedgerTrans(LedgerTransModel transtable)
         {
 
-            transtable.TransId = GetTransId() + 1;
+           // transtable.TransId = GetTransId() + 1;
             using (IDbConnection connection = new SqlConnection(GlobalConfig.cn))
             {
                 var p = new DynamicParameters();
-                StringBuilder sql = new StringBuilder();
-                sql.Append("insert into LedgerTrans ");
-                sql.Append("(TransId,Sender,Receiver,Amount ,Fee,Reward  ,BlockHash ,TransDate ,Note,TransHash)");
-                sql.Append("values");
-                sql.Append("(@TransId,@Sender,@Receiver,@Amount ,@Fee,@Reward  ,@BlockHash ,@TransDate ,@Note,@TransHash)");
-                sql.Append("");
-                sql.Append("");
-                var sqlLedgerupdate = "Update LedgerTrans set TransHash=@TransHash where RecId=@RecId and Company=@Company";
-
+                StringBuilder sqltrans = new StringBuilder();
+                sqltrans.Append("insert into LedgerTrans ");
+                sqltrans.Append("(TransId,Sender,Receiver,Amount ,Fee,Reward  ,BlockHash ,TransDate ,Note,TransHash)");
+                sqltrans.Append("values");
+                sqltrans.Append("(@TransId,@Sender,@Receiver,@Amount ,@Fee,@Reward  ,@BlockHash ,@TransDate ,@Note,@TransHash)");
+                sqltrans.Append("");
+                sqltrans.Append("");
+                var sqlinput = "Update UTXO set Spent=@Spent where publickey=@publickey ";
+                var sqloutputs = "insert into UTXO() values()";
 
 
                 using (var trans = connection.BeginTransaction())
@@ -36,17 +36,17 @@ namespace CGBlockDA
                     {
 
 
-                        var r = connection.Execute(sql.ToString(), transtable, trans);
+                        var r = connection.Execute(sqltrans.ToString(), transtable, trans);
                         // connection.Execute(sqlLedgerupdate, transtable, trans);
-                      
-                            foreach (var vin in transtable.Inputs)
-                            {
-
-                            }
-                            foreach (var vout in transtable.Outputs)
-                            {
-
-                            }
+                        var pinput = new { Spent = 1, publickey = "" };
+                        foreach (var vin in transtable.Inputs)
+                        {
+                            connection.Execute(sqlinput, pinput, trans);
+                        }
+                        foreach (var vout in transtable.Outputs)
+                        {
+                            connection.Execute(sqlinput, vout, trans);
+                        }
 
                         
 

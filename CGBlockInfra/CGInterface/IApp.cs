@@ -12,5 +12,6 @@ namespace CGBlockInfra.CGInterface
          List<NodeModel> Nodes { get; set; }
          NodeModel Node { get; set; }
          BlockModel CurrentBlock { get; set; }
+        public List<LedgerTransModel> MemPool { get; set; }
     }
 }

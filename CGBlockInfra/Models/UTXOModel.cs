@@ -13,7 +13,7 @@ namespace CGBlockInfra.Models
             
         }
         public int Id { get; set; }
-        public long TransId { get; set; }
+        public string TransId { get; set; }
         public int OutputIndex { get; set; } = 0;
         public string Address { get; set; }
         public string PublikKey { get; set; }

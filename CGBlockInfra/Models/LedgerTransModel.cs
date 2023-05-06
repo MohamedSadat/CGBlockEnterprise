@@ -22,7 +22,7 @@ namespace CGBlockInfra.Models
         public string Reciver { get; set; } = "";
         public double Amount { get; set; } = 0.02f;
         public double Fee { get; set; } = 0.02f;
-        public long TransId { get; set; } = 0;
+        public string TransId { get; set; } = "";
         public int TransStatus { get; set; } = 0;
         public string TransHash { get; set; } = "";
         public string Note { get; set; } = "";
