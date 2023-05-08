@@ -22,7 +22,7 @@ namespace CGBlockInfra.Models
         public BlockModel CurrentBlock { get; set; } = new BlockModel();
        public BlockModel LastBlock { get; set; } = new BlockModel();
 
-        public List<LedgerTransModel> MemPool { get; set; }=new List<LedgerTransModel>();
+        public Stack<LedgerTransModel> MemPool { get; set; }=new Stack<LedgerTransModel>();
 
     }
 }

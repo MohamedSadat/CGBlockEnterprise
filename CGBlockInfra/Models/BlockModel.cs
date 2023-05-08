@@ -24,6 +24,9 @@ namespace CGBlockInfra.Models
     
         public string NodeAddress { get; set; } = "";
         public int BlockSize { get; set; } = 0;
+        public long Nonce { get; set; } = 0;
+        public int Version { get; set; } = 0;
+        public string MerkleRoot { get; set; } = "";
         public TBlockState BlockState { get; set; } = TBlockState.NotSet;
     }
 }

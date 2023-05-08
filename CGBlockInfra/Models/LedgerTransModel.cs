@@ -31,6 +31,7 @@ namespace CGBlockInfra.Models
         public int BlockHeight { get; set; } = 0;
         public string PublicKey { get; set; } = "";
         public TTransState TransStatus { get; set; } = TTransState.Created;
+      public  TTransType TransType { get; set; } = TTransType.Normal;
         public List<UTXOModel> Inputs { get; set; } = new List<UTXOModel>();
         public List<UTXOModel> Outputs { get; set; } = new List<UTXOModel>();
 

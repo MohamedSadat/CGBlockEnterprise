@@ -42,7 +42,10 @@ namespace CGBlockBussines
                 BlockHeight = 0,
                 Fee = 0,
                 Reward = 50,
-                NodeAddress = app.Node.Address
+                NodeAddress = app.Node.Address,BlockDate=DateTime.Now,
+                BlockSize = 0,
+                Volume = 0,
+                Version = 0,
             };
             var trans = new LedgerTransModel
             {
@@ -58,9 +61,10 @@ namespace CGBlockBussines
                 Sender = "",
                 BlockHeight=block.BlockHeight,
                 PublicKey=app.Node.PublicKey,
-            
+                TransType = CGBlockInfra.CGTypes.TTransType.CoinBase
+
             };
-            BLCrytography.HashTransaction(trans);
+            trans.TransHash= BLCrytography.HashTransaction(trans);
            
             block.Transactions.Add(trans);
 
@@ -84,9 +88,10 @@ namespace CGBlockBussines
                
             };
             trans.Outputs.Add(utxo);
+            BLCrytography.CalculateMerkleRoot(block);
             xnode.SaveGenisusBlock(block);
         }
-        public void GenerateBlock()
+        public void GenerateNewBlock()
         {
             var block = new BlockModel
             {
@@ -98,17 +103,19 @@ namespace CGBlockBussines
                 Reward=50,
             };
 
-            BLCrytography.HashBlock(block);
+           block.BlockHash= BLCrytography.MineBlock(block);
 
             //Generate Reward transaction
           block.Transactions.Add(  GenerateRewardTransaction(block));
+            BLCrytography.CalculateMerkleRoot(block);
 
             app.Node.BlockChain.Add(new BlockChainModel
             {
                 BlockHash = block.BlockHash,
                 PrevBlockHash = block.PrevBlockHash,
                 BlockHeight = block.BlockHeight,
-                BlockHashModel = block
+                BlockHashModel = block,
+                
             });
             if(xnode.SaveBlock(block)==true)
             {
@@ -128,9 +135,11 @@ namespace CGBlockBussines
                 TransDate = DateTime.Now,
                 TimeStamp = DateTime.Now.Ticks,
                 BlockHeight=block.BlockHeight,
-                PublicKey=app.Node.PublicKey
+                PublicKey=app.Node.PublicKey,
+                TransType=CGBlockInfra.CGTypes.TTransType.CoinBase,
+                
             };
-            BLCrytography.HashTransaction(trans);
+          trans.TransHash=  BLCrytography.HashTransaction(trans);
             var output = new UTXOModel
             {
                 Address = block.NodeAddress,
@@ -146,15 +155,15 @@ namespace CGBlockBussines
         }
         public void ReceiveTransaction(LedgerTransModel trans)
         {
-            if(app.Node.CurrentBlock.BlockState==CGBlockInfra.CGTypes.TBlockState.NotSet)
+            if(app.Node.CurrentBlock.BlockState==CGBlockInfra.CGTypes.TBlockState.NotSet || app.Node.CurrentBlock.Transactions.Count>=50)
             {
-                GenerateBlock();
+                GenerateNewBlock();
             }
           //  var address = BLCrytography.HashAlgoStd(publickey);
             trans.BlockHash = app.Node.CurrentBlock.BlockHash;
             trans.BlockHeight = app.Node.CurrentBlock.BlockHeight;
            // trans.Sender = address;
-        BLCrytography.HashTransaction(trans);
+       trans.TransHash= BLCrytography.HashTransaction(trans);
          
          
 
@@ -162,12 +171,12 @@ namespace CGBlockBussines
             {
                 trans.TransStatus = CGBlockInfra.CGTypes.TTransState.Validated;
                 //add it to pool after validation
-                app.Node.MemPool.Add(trans);
+                app.Node.MemPool.Push(trans);
                 trans.TransStatus = CGBlockInfra.CGTypes.TTransState.Pending;
                // BroadCastTrans(trans);
 
                 //You should pickit first from the queue
-                ConfirmTrans(trans);
+                ConfirmTrans();
             }
 
         }
@@ -186,21 +195,36 @@ namespace CGBlockBussines
           
             return true;
         }
-        public void ConfirmTrans(LedgerTransModel trans)
+        public void ConfirmTrans()
         {
-            xutxo.GenerateInputs(trans);
-          xutxo.  GenerateOutput(trans);
+            if (app.Node.MemPool.Count == 0)
+                return;
+
+            LedgerTransModel trans = app.Node.MemPool.Pop();
+            xutxo.GenerateSenderInputs(trans);
+          xutxo.  GenerateSenderOutput(trans);
+
             xutxo.GenerateReceiverOutput(trans);
             xutxo.GenerateFeeOutput(trans);
 
             xnode.SaveLedgerTrans(trans);
 
             app.Node.CurrentBlock.Transactions.Add(trans);
+            CheckBlock(app.Node.CurrentBlock);
+            BLCrytography.CalculateMerkleRoot(app.Node.CurrentBlock);
+            xnode.UpdateMerkleRoot(app.Node.CurrentBlock);
 
-            app.Node.MemPool.Remove(trans);
         }
 
-   
+   public void CheckBlock(BlockModel block)
+        {
+            if(block.Transactions.Count==10)
+            {
+                //Validated
+                //GenerateNew
+                GenerateNewBlock();
+            }
+        }
         public void BroadCastTrans(LedgerTransModel trans)
         {
 

@@ -37,6 +37,8 @@ namespace CGBlockBussines
         }
         public void Send(LedgerTransModel trans )
         {
+            //Prepare inputs,outputs
+
             IApp app = new CAppModel();
             app.Node = Wallet.Peers[0];
 

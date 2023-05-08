@@ -21,12 +21,12 @@ namespace CGBlockDA
                 var p = new DynamicParameters();
                 StringBuilder sqltrans = new StringBuilder();
                 sqltrans.Append("insert into LedgerTrans ");
-                sqltrans.Append("(TransId,Sender,Receiver,Amount ,Fee,Reward  ,BlockHash ,TransDate ,Note,TransHash,BlockHeight,PublicKey)");
+                sqltrans.Append("(TransId,Sender,Receiver,Amount ,Fee,Reward  ,BlockHash ,TransDate ,Note,TransHash,BlockHeight)");
                 sqltrans.Append("values");
-                sqltrans.Append("(@TransId,@Sender,@Receiver,@Amount ,@Fee,@Reward  ,@BlockHash ,@TransDate ,@Note,@TransHash,@BlockHeight,@PublicKey)");
+                sqltrans.Append("(@TransId,@Sender,@Receiver,@Amount ,@Fee,@Reward  ,@BlockHash ,@TransDate ,@Note,@TransHash,@BlockHeight)");
                 sqltrans.Append("");
                 sqltrans.Append("");
-                var sqlinput = "Update UTXO set Spent=@Spent where  Id=@Id ";
+                var sqlinput = "Update UTXO set Spent=@Spent,OutputIndex=@OutputIndex where  Id=@Id ";
                 var sqloutputs = "insert into UTXO(Id,TransId,OutputIndex,Amount,Address,PublicKey,Spent) values(@Id,@TransId,@OutputIndex,@Amount,@Address,@PublicKey,@Spent)";
                 connection.Open();
                 int id = GetUTXOId();
@@ -40,22 +40,25 @@ namespace CGBlockDA
                         var r = connection.Execute(sqltrans.ToString(), transtable, trans);
                         transtable.TransStatus = CGBlockInfra.CGTypes.TTransState.Created;
                         // connection.Execute(sqlLedgerupdate, transtable, trans);
-                        
-                        foreach (var vin in transtable.Inputs)
-                        {
-                        var pinput = new { Spent = 1, publickey =transtable.PublicKey,Id=vin.Id };
-
-                            // vin.Id = id;
-                            //  id++;
-                            connection.Execute(sqlinput, pinput, trans);
-                        }
-
+                     
                         foreach (var vout in transtable.Outputs)
                         {
                             vout.Id = id;
                             id++;
                             connection.Execute(sqloutputs, vout, trans);
                         }
+
+                        foreach (var vin in transtable.Inputs)
+                        {
+                        
+                            var pinput = new { Spent = 1, publickey =transtable.PublicKey,Id=vin.Id,OutputIndex=0 };
+
+                            // vin.Id = id;
+                            //  id++;
+                            connection.Execute(sqlinput, pinput, trans);
+                        }
+
+                   
 
                         
 

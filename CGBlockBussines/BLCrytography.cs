@@ -23,6 +23,27 @@ namespace CGBlockBussines
                 return false;
             }
         }
+        public static bool ValidateBlockMerkle(BlockModel block) 
+        {
+            var curhash = block.MerkleRoot;
+            var correcthash = CalculateMerkleRoot(block);
+            if(curhash==correcthash)
+            {
+                return true;
+            }
+            else
+            { return false; }
+        }
+        public static string CalculateMerkleRoot(BlockModel block)
+        {
+            string hash = "";
+            foreach(var trans in block.Transactions) 
+            {
+                hash = hash + trans.TransHash;
+            }
+            block.MerkleRoot = HashAlgoStd(hash);
+            return block.MerkleRoot;
+        }
         public static string HashAlgoStd(string password, int outputSize = 32)
         {
             using (SHA256 sha256Hash = SHA256.Create())
@@ -40,17 +61,25 @@ namespace CGBlockBussines
                 return sb.ToString();
             }
         }
-        public static string HashBlock(BlockModel block)
+        public static string MineBlock(BlockModel block)
         {
-            var hash = HashAlgoStd($"{block.PrevBlockHash}{block.TimeStamp}{block.BlockHeight}");
-            block.BlockHash = hash;
-            return hash;        
+            var hash = HashAlgoStd($"{block.PrevBlockHash}{block.TimeStamp}{block.BlockHeight}{block.Nonce}");
+            while(hash.StartsWith("000") == false)
+            {
+                block.Nonce++;
+                hash = HashAlgoStd($"{block.PrevBlockHash}{block.TimeStamp}{block.BlockHeight}{block.Nonce}");
+            }
+          //  block.BlockHash = hash;
+            return hash;
+
+        
+
         }
         public static string HashTransaction(LedgerTransModel trans)
         {
             trans.TransId = GeneratePrivateKey();
             var hash = HashAlgoStd($"{trans.TransId}{trans.Sender}{trans.Receiver}{trans.Amount}{trans.TransDate}{trans.Note}{trans.NodeAddress}{trans.BlockHash}");
-            trans.TransHash = hash;
+          //  trans.TransHash = hash;
             return hash;
         }
        public static string GeneratePrivateKey()

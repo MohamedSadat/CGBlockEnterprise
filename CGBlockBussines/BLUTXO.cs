@@ -18,7 +18,7 @@ namespace CGBlockBussines
             this.app = app;
         }
 
-      public void GenerateInputs(LedgerTransModel trans)
+      public void GenerateSenderInputs(LedgerTransModel trans)
         {
             var address = BLCrytography.HashAlgoStd(trans.PublicKey);
             var allinputs = xutxo.GetUnpent(address);
@@ -33,7 +33,7 @@ namespace CGBlockBussines
                 }
             }
         }
-        public void GenerateOutput(LedgerTransModel trans)
+        public void GenerateSenderOutput(LedgerTransModel trans)
         {
             foreach (var vin in trans.Inputs)
             {
@@ -49,6 +49,8 @@ namespace CGBlockBussines
                         OutputIndex = vin.Id,
                         PublicKey=trans.PublicKey
                     };
+                    //vin.OutputIndex = vout.Id;
+
                     trans.Outputs.Add(vout);
                 }
                 if (output == 0)

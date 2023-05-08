@@ -14,5 +14,6 @@ namespace CGBlockInfra.CGInterface
         bool SaveLedgerTrans(LedgerTransModel transtable);
         List<UTXOModel> GetUnpent(string publickey);
         double GetBalance(string publickey);
+        void UpdateMerkleRoot(BlockModel block);
     }
 }

@@ -22,16 +22,16 @@ namespace CGBlockDA
                 var p = new DynamicParameters();
                 StringBuilder sqlblock = new StringBuilder();
                 sqlblock.Append("insert into Blocks ");
-                sqlblock.Append("(PrevBlockHash,TimeStamp,BlockHeight,BlockHash ,NodeAddress,Reward,BlockDate)");
+                sqlblock.Append("(PrevBlockHash,TimeStamp,BlockHeight,BlockHash ,NodeAddress,Reward,BlockDate,MerkleRoot)");
                 sqlblock.Append("values");
-                sqlblock.Append("(@PrevBlockHash,@TimeStamp,@BlockHeight,@BlockHash ,@NodeAddress,@Reward,@BlockDate)");
+                sqlblock.Append("(@PrevBlockHash,@TimeStamp,@BlockHeight,@BlockHash ,@NodeAddress,@Reward,@BlockDate,@MerkleRoot)");
                 sqlblock.Append("");
                 sqlblock.Append("");
                 StringBuilder sqltrans = new StringBuilder();
                 sqltrans.Append("insert into LedgerTrans ");
-                sqltrans.Append("(TransId,Sender,Receiver,Amount ,Fee,Reward  ,BlockHash ,TransDate ,Note,TransHash,BlockHeight,PublicKey)");
+                sqltrans.Append("(TransId,Sender,Receiver,Amount ,Fee,Reward  ,BlockHash ,TransDate ,Note,TransHash,BlockHeight)");
                 sqltrans.Append("values");
-                sqltrans.Append("(@TransId,@Sender,@Receiver,@Amount ,@Fee,@Reward  ,@BlockHash ,@TransDate ,@Note,@TransHash,@BlockHeight,@PublicKey)");
+                sqltrans.Append("(@TransId,@Sender,@Receiver,@Amount ,@Fee,@Reward  ,@BlockHash ,@TransDate ,@Note,@TransHash,@BlockHeight)");
 
                 var sqloutputs = "insert into UTXO(Id,TransId,OutputIndex,Amount,Address,PublicKey,Spent) values(@Id,@TransId,@OutputIndex,@Amount,@Address,@PublicKey,@Spent)";
 
@@ -84,16 +84,16 @@ namespace CGBlockDA
                 var p = new DynamicParameters();
                 StringBuilder sqlblock = new StringBuilder();
                 sqlblock.Append("insert into Blocks ");
-                sqlblock.Append("(PrevBlockHash,TimeStamp,BlockHeight,BlockHash ,NodeAddress,Reward,BlockDate)");
+                sqlblock.Append("(PrevBlockHash,TimeStamp,BlockHeight,BlockHash ,NodeAddress,Reward,BlockDate,MerkleRoot,Nonce)");
                 sqlblock.Append("values");
-                sqlblock.Append("(@PrevBlockHash,@TimeStamp,@BlockHeight,@BlockHash ,@NodeAddress,@Reward,@BlockDate)");
+                sqlblock.Append("(@PrevBlockHash,@TimeStamp,@BlockHeight,@BlockHash ,@NodeAddress,@Reward,@BlockDate,@MerkleRoot,@Nonce)");
                 sqlblock.Append("");
                 sqlblock.Append("");
                 StringBuilder sqltrans = new StringBuilder();
                 sqltrans.Append("insert into LedgerTrans ");
-                sqltrans.Append("(TransId,Sender,Receiver,Amount ,Fee,Reward  ,BlockHash ,TransDate ,Note,TransHash,BlockHeight,PublicKey)");
+                sqltrans.Append("(TransId,Sender,Receiver,Amount ,Fee,Reward  ,BlockHash ,TransDate ,Note,TransHash,BlockHeight)");
                 sqltrans.Append("values");
-                sqltrans.Append("(@TransId,@Sender,@Receiver,@Amount ,@Fee,@Reward  ,@BlockHash ,@TransDate ,@Note,@TransHash,@BlockHeight,@PublicKey)");
+                sqltrans.Append("(@TransId,@Sender,@Receiver,@Amount ,@Fee,@Reward  ,@BlockHash ,@TransDate ,@Note,@TransHash,@BlockHeight)");
                 sqltrans.Append("");
                 sqltrans.Append("");
                 var sqlinput = "Update UTXO set Spent=@Spent where publickey=@publickey ";
@@ -225,6 +225,19 @@ namespace CGBlockDA
                 return r+1;
             }
 
+        }
+
+        public void UpdateMerkleRoot(BlockModel block)
+        {
+            using (IDbConnection connection = new SqlConnection(GlobalConfig.cn))
+            {
+                StringBuilder sql = new StringBuilder();
+                sql.Append("update Blocks set MerkleRoot=@MerkleRoot ");
+                sql.Append("where BlockHeight=@BlockHeight ");
+
+                var r = connection.Execute(sql.ToString(),block);
+                
+            }
         }
     }
 }

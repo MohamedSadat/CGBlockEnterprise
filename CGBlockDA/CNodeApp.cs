@@ -45,5 +45,10 @@ namespace CGBlockDA
         {
          return xledger.SaveLedgerTrans(transtable);
         }
+
+        public void UpdateMerkleRoot(BlockModel block)
+        {
+           xnode.UpdateMerkleRoot(block);
+        }
     }
 }

@@ -19,12 +19,13 @@ namespace WalletApp
             wallet.PublicKey = "bf020af2dadec840cc6e979924be2c75e1a4c3567c93185ed5a0f7beff8df5a4";
             wallet.Address = "c7d67c3ad12097f3a86a8c0b23380c511ee5322558dc49553944559352e2f325";
 
-            var trans = new LedgerTransModel {Amount=15,
+            var trans = new LedgerTransModel {Amount=2,
             Sender=bLWallet.Wallet.Address,
             Receiver= "9766d4ffaa2e599dddc66ff936948fc7fad3961227dfebda0e21f6e3ae012400",
             Note="send again",
             Fee=0,
             PublicKey=wallet.PublicKey,
+            TransType=CGBlockInfra.CGTypes.TTransType.Normal
             };
 
             foreach (var node in wallet.Peers)
