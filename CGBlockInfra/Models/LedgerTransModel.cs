@@ -27,6 +27,8 @@ namespace CGBlockInfra.Models
 
         public string TransId { get; set; } = "";
         public string TransHash { get; set; } = "";
+        public string Digest { get; set; } = "";
+
         public string Note { get; set; } = "";
         public int BlockHeight { get; set; } = 0;
         public string PublicKey { get; set; } = "";

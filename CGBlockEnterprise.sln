@@ -11,9 +11,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CGBlockBussines", "CGBlockB
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CGBlockAPIGate", "CGBlockAPIGate\CGBlockAPIGate.csproj", "{6B9C241D-E276-494F-89EE-557EB490A98A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WalletApp", "WalletApp\WalletApp.csproj", "{51797E8F-4BFC-41F0-A493-A5B7031298A9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WalletApp", "WalletApp\WalletApp.csproj", "{51797E8F-4BFC-41F0-A493-A5B7031298A9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NodeApp", "NodeApp\NodeApp.csproj", "{0BAC177C-09B7-4338-99D7-30E30B8F410D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NodeApp", "NodeApp\NodeApp.csproj", "{0BAC177C-09B7-4338-99D7-30E30B8F410D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WalletBAApp", "WalletBAApp\WalletBAApp.csproj", "{C7D12A38-F77D-4015-910D-A3AC6F961CA6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,6 +47,10 @@ Global
 		{0BAC177C-09B7-4338-99D7-30E30B8F410D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0BAC177C-09B7-4338-99D7-30E30B8F410D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0BAC177C-09B7-4338-99D7-30E30B8F410D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C7D12A38-F77D-4015-910D-A3AC6F961CA6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C7D12A38-F77D-4015-910D-A3AC6F961CA6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C7D12A38-F77D-4015-910D-A3AC6F961CA6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C7D12A38-F77D-4015-910D-A3AC6F961CA6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
